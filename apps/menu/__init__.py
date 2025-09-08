@@ -1,1 +1,1 @@
-default_app_config = 'apps.menu.apps.MenuConfig'
+default_app_config = 'apps.menus.apps.MenuConfig'

@@ -1,0 +1,53 @@
+/* 侧边栏整体样式 */
+#sidebar {
+  width: 260px;
+  /* 调整宽度 */
+  background: #f8fafc;
+  /* 背景色 */
+  border-right: 1px solid #e2e8f0;
+  /* 右侧边框 */
+}
+
+/* 菜单分组标题 */
+#sidebar h2 {
+  background: #1e3a8a !important;
+  /* 标题背景色 */
+  color: white !important;
+  /* 标题文字色 */
+  padding: 12px 15px !important;
+  /* 内边距 */
+  font-size: 15px !important;
+  border-radius: 0 !important;
+}
+
+/* 菜单项样式 */
+#sidebar ul li a {
+  padding: 10px 15px !important;
+  /* 调整间距 */
+  color: #334155 !important;
+  /* 文字颜色 */
+  font-size: 14px !important;
+  border-left: 3px solid transparent;
+  /* 左侧留白 */
+}
+
+/* 菜单项 hover 效果 */
+#sidebar ul li a:hover {
+  background: #e2e8f0 !important;
+  border-left-color: #1e3a8a !important;
+  /* 左侧高亮条 */
+  text-decoration: none !important;
+}
+
+/* 当前选中项样式 */
+#sidebar ul li.selected a {
+  background: #dbeafe !important;
+  color: #1e3a8a !important;
+  font-weight: 600 !important;
+}
+
+/* 折叠/展开图标 */
+#sidebar .toggle-icon {
+  margin-right: 8px;
+  font-size: 12px;
+}

@@ -1,0 +1,19 @@
+{% extends "admin/login.html" %} <!-- 注意开头是{%，不是{{或<!-- -->
+{% load i18n static %}
+
+{# 以下是自定义内容 #}
+{% block title %}自定义登录 - 我的网站{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+  <a href="{% url 'admin:index' %}">我的自定义管理后台111</a>
+</h1>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  /* 测试样式：添加红色边框，验证是否生效 */
+
+</style>
+{% endblock %}

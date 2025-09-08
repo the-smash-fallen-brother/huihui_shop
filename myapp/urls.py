@@ -1,9 +1,10 @@
 from django.contrib import admin
 from django.urls import path, include
+# import admin_tools.urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
+    # path('admin/', include(admin_tools.urls)),  # 替代默认 admin 路由
     # 用户账户模块
     path('auth/', include('apps.accounts.urls')),  # 所有账户相关路由统一前缀
     

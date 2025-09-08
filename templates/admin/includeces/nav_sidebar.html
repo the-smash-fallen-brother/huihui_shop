@@ -1,0 +1,40 @@
+{% load i18n admin_urls %}
+<div id="nav-sidebar">
+  <div class="module">
+    <table>
+      <caption>
+        <a href="#" class="section" title="{% trans 'Site administration' %}">
+          {% trans 'Site administration' %}
+        </a>
+      </caption>
+
+      {% for app in available_apps %}
+      <tr class="model-{{ app.app_label }}{% if app.app_label in selected_app %} selected{% endif %}">
+        <th scope="row">
+          <a href="{{ app.app_url }}" class="{% if app.models|length > 1 %}has-submenu{% endif %}"
+            data-app-label="{{ app.app_label }}"
+            title="{% blocktrans with name=app.name %}Models in the {{ name }} application{% endblocktrans %}">
+            {{ app.name }}
+          </a>
+
+          <!-- 二级菜单容器 -->
+          <div id="secondary-{{ app.app_label }}" class="nav-secondary-container">
+            <div class="nav-secondary">
+              <div class="nav-secondary-header">
+                <h4>{{ app.name }}</h4>
+              </div>
+              {% for model in app.models %}
+              <div class="nav-secondary-item">
+                <a href="{{ model.admin_url }}">
+                  {{ model.name }}
+                </a>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </th>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{# 模板调试标记 - 用于确认模板是否被加载 #}
+<!-- 自定义BaseSite模板已加载 -->
+
+{% block title %}
+    {% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | 管理系统
+{% endblock %}
+
+{% block branding %}
+    <h1 id="site-name">
+        <a href="{% url 'admin:index' %}">
+            <!-- 简化的Logo配置，避免路径问题 -->
+            {% if 1 == 1 %}
+                <span style="display:inline-block;width:30px;height:30px;background:#165DFF;border-radius:4px;margin-right:10px;vertical-align:middle;"></span>
+            {% else %}
+                <img src="{% static 'admin/img/icon-addlink.svg' %}" alt="Logo" style="height:30px;vertical-align:middle;margin-right:10px;">
+            {% endif %}
+            平台管理系统
+        </a>
+    </h1>
+{% endblock %}
+
+{% block nav-global %}
+    <div style="padding:10px 0;border-bottom:1px solid #eee;">
+        灰灰电商平台管理
+    </div>
+{% endblock %}
+
+{% block extrahead %}
+    <style>
+        /* 强制修改头部样式，确保效果可见 */
+        #header {
+            background: #2c3e50 !important;
+        }
+        #site-name a {
+            color: #ffffff !important;
+        }
+        #nav-global a {
+            color: #3498db !important;
+        }
+    </style>
+{% endblock %}

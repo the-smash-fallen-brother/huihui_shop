@@ -35,7 +35,16 @@ ALLOWED_HOSTS = []
 # 安装的apps
 AUTH_USER_MODEL = 'accounts.User'
 INSTALLED_APPS = [
+     # 必须放在最前面
+     'simpleui',  # 必须放在 django.contrib.admin 之前
+    # 'admin_tools',
+    # 'admin_tools.theming',
+    # 'admin_tools.menu',
+    # 'admin_tools.dashboard',
+
+
     'django.contrib.admin',
+   # 新版本无需替代 'django.contrib.admin'
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -92,6 +101,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 # 允许cookie跨域
 CORS_ALLOW_CREDENTIALS = True
 MIDDLEWARE = [
+    # 'admin_tools.middleware.AdminMediaMiddleware',
 #   请求从上到下，响应从下到上（类似请求拦截响应拦截，理解未类）
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',

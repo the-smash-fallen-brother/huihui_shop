@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django import forms
 from .models import Order, OrderItem
 
 class OrderItemInline(admin.TabularInline):
@@ -7,11 +8,9 @@ class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
     readonly_fields = (
-        'goods', 
         'goods_name', 
         'goods_cover_img_preview',
         'goods_price',
-        'goods_num',
         'goods_total_price'
     )
     fields = (
@@ -24,12 +23,29 @@ class OrderItemInline(admin.TabularInline):
     )
     
     def goods_cover_img_preview(self, obj):
-        return format_html('<img src="{}" height="50" />', obj.goods_cover_img)
+        if obj.goods_cover_img:
+            return format_html('<img src="{}" height="50" />', obj.goods_cover_img)
+        return "无图片"
     goods_cover_img_preview.short_description = '商品图片'
+
+class OrderAdminForm(forms.ModelForm):
+    """订单管理表单"""
+    class Meta:
+        model = Order
+        fields = '__all__'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 在添加新订单时，设置一些字段的初始值
+        if not self.instance.pk:  # 新订单
+            self.fields['order_status'].initial = 1  # 默认待付款
+            self.fields['payment_type'].initial = 1  # 默认支付方式
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     """订单管理配置"""
+    form = OrderAdminForm
+    
     list_display = (
         'order_no',
         'user_info',
@@ -61,21 +77,12 @@ class OrderAdmin(admin.ModelAdmin):
         'mark_as_completed',
         'export_orders'
     ]
-    readonly_fields = (
-        'order_no',
-        'total_amount',
-        'payment_amount',
-        'shipping_fee',
-        'receiver_full_info',
-        'create_time',
-        'update_time'
-    )
     date_hierarchy = 'create_time'
     
     fieldsets = (
         ('订单信息', {
             'fields': (
-                'order_no',
+                # 'order_no',
                 'user',
                 ('total_amount', 'payment_amount', 'shipping_fee'),
                 ('order_status', 'payment_type')
@@ -90,8 +97,12 @@ class OrderAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('收货信息', {
-            'fields': ('receiver_full_info', 'remark'),
-            'classes': ('collapse',)
+            'fields': (
+                'receiver_name',
+                'receiver_mobile', 
+                'receiver_address',
+                'remark'
+            )
         }),
         ('时间信息', {
             'fields': ('create_time', 'update_time'),
@@ -99,13 +110,50 @@ class OrderAdmin(admin.ModelAdmin):
         }),
     )
 
-    # 自定义字段显示
+    def get_readonly_fields(self, request, obj=None):
+        """动态设置只读字段"""
+        if obj:  # 编辑现有订单
+            return (
+                'order_no',
+                'total_amount',
+                'payment_amount',
+                'shipping_fee',
+                'create_time',
+                'update_time'
+            )
+        else:  # 添加新订单
+            return ('create_time', 'update_time')
+
+    def save_model(self, request, obj, form, change):
+        """保存模型时自动生成订单编号"""
+        if not change:  # 新订单
+            # 自动生成订单编号
+            import datetime
+            import random
+            timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            random_str = str(random.randint(1000, 9999))
+            obj.order_no = f'ORD{timestamp}{random_str}'
+            
+            # 设置默认金额值（如果未填写）
+            if not obj.total_amount:
+                obj.total_amount = 0
+            if not obj.payment_amount:
+                obj.payment_amount = obj.total_amount
+            if obj.shipping_fee is None:
+                obj.shipping_fee = 0
+        
+        super().save_model(request, obj, form, change)
+
+    # 自定义字段显示方法
     def user_info(self, obj):
-        return f"{obj.user.username}(ID:{obj.user.user_id})"
+        if obj.user:
+            # 使用 user_id 而不是 id
+            return f"{obj.user.username}(ID:{obj.user.user_id})"
+        return "无用户"
     user_info.short_description = '用户'
 
     def payment_amount_display(self, obj):
-        return f"¥{obj.payment_amount:.2f}"
+        return f"¥{obj.payment_amount:.2f}" if obj.payment_amount else "¥0.00"
     payment_amount_display.short_description = '实付金额'
 
     def order_status_display(self, obj):
@@ -118,7 +166,7 @@ class OrderAdmin(admin.ModelAdmin):
         }
         text, color = status_map.get(obj.order_status, ('未知', 'black'))
         return format_html(
-            '<span style="color: {};">{}</span>',
+            '<span style="color: {}; font-weight: bold;">{}</span>',
             color, text
         )
     order_status_display.short_description = '订单状态'
@@ -128,27 +176,18 @@ class OrderAdmin(admin.ModelAdmin):
     payment_type_display.short_description = '支付方式'
 
     def receiver_info(self, obj):
-        return format_html(
-            '{} {}<br>{}',
-            obj.receiver_name,
-            obj.receiver_mobile,
-            obj.receiver_address
-        )
+        if obj.receiver_name and obj.receiver_mobile:
+            return format_html(
+                '{} {}<br>{}',
+                obj.receiver_name,
+                obj.receiver_mobile,
+                obj.receiver_address[:20] + '...' if obj.receiver_address and len(obj.receiver_address) > 20 else obj.receiver_address
+            )
+        return "未设置"
     receiver_info.short_description = '收货信息'
 
-    def receiver_full_info(self, obj):
-        return format_html(
-            '<strong>收货人：</strong>{}<br>'
-            '<strong>电话：</strong>{}<br>'
-            '<strong>地址：</strong>{}',
-            obj.receiver_name,
-            obj.receiver_mobile,
-            obj.receiver_address
-        )
-    receiver_full_info.short_description = '收货详情'
-
     def create_short_time(self, obj):
-        return obj.create_time.strftime('%m-%d %H:%M')
+        return obj.create_time.strftime('%Y-%m-%d %H:%M') if obj.create_time else ""
     create_short_time.short_description = '下单时间'
 
     def action_buttons(self, obj):
@@ -159,11 +198,10 @@ class OrderAdmin(admin.ModelAdmin):
             buttons.append('<a class="button" href="mark_as_shipped/">标记为已发货</a>')
         if obj.order_status == 3:  # 待收货
             buttons.append('<a class="button" href="mark_as_completed/">标记为已完成</a>')
-        return format_html(' '.join(buttons))
+        return format_html(' '.join(buttons)) if buttons else "无操作"
     action_buttons.short_description = '操作'
-    action_buttons.allow_tags = True
 
-    # 批量操作
+    # 批量操作方法
     def mark_as_paid(self, request, queryset):
         from django.utils import timezone
         updated = queryset.filter(order_status=1).update(
@@ -192,7 +230,7 @@ class OrderAdmin(admin.ModelAdmin):
     mark_as_completed.short_description = "标记为已完成"
 
     def export_orders(self, request, queryset):
-        """导出订单示例"""
+        """导出订单"""
         from django.http import HttpResponse
         import csv
         
@@ -205,10 +243,10 @@ class OrderAdmin(admin.ModelAdmin):
         for order in queryset:
             writer.writerow([
                 order.order_no,
-                order.user.username,
-                float(order.payment_amount),
+                order.user.username if order.user else '',
+                float(order.payment_amount) if order.payment_amount else 0,
                 order.get_order_status_display(),
-                order.create_time.strftime('%Y-%m-%d %H:%M')
+                order.create_time.strftime('%Y-%m-%d %H:%M') if order.create_time else ''
             ])
         return response
     export_orders.short_description = "导出选中订单"
@@ -226,7 +264,7 @@ class OrderItemAdmin(admin.ModelAdmin):
         'goods_total_price_display',
         'create_short_time'
     )
-    list_filter = ('create_time',)
+    list_filter = ('create_time', 'order__order_no')
     search_fields = (
         'order__order_no',
         'goods__goods_name',
@@ -234,38 +272,52 @@ class OrderItemAdmin(admin.ModelAdmin):
     )
     raw_id_fields = ('order', 'goods')
     readonly_fields = ('goods_cover_img_preview',)
+    list_per_page = 20
     
     def order_link(self, obj):
-        return format_html(
-            '<a href="/admin/orders/order/{}/change/">{}</a>',
-            obj.order.id,
-            obj.order.order_no
-        )
+        if obj.order:
+            # 使用 order_id 而不是 id
+            return format_html(
+                '<a href="/admin/orders/order/{}/change/">{}</a>',
+                obj.order.order_id,  # 修改这里
+                obj.order.order_no
+            )
+        return "无订单"
     order_link.short_description = '订单编号'
     
     def goods_link(self, obj):
-        return format_html(
-            '<a href="/admin/goods/goods/{}/change/">{}</a>',
-            obj.goods.id,
-            obj.goods_name
-        )
+        if obj.goods:
+            # 使用 goods_id 而不是 id
+            return format_html(
+                '<a href="/admin/goods/goods/{}/change/">{}</a>',
+                obj.goods.goods_id,  # 修改这里
+                obj.goods_name or obj.goods.goods_name
+            )
+        return format_html('<span>{}</span>', obj.goods_name or "无商品")
     goods_link.short_description = '商品名称'
     
     def goods_cover_img_preview(self, obj):
-        return format_html(
-            '<img src="{}" height="50" />', 
-            obj.goods_cover_img
-        )
+        if obj.goods_cover_img:
+            return format_html(
+                '<img src="{}" height="50" />', 
+                obj.goods_cover_img
+            )
+        return "无图片"
     goods_cover_img_preview.short_description = '商品图片'
     
     def goods_price_display(self, obj):
-        return f"¥{obj.goods_price:.2f}"
+        return f"¥{obj.goods_price:.2f}" if obj.goods_price else "¥0.00"
     goods_price_display.short_description = '单价'
     
     def goods_total_price_display(self, obj):
-        return f"¥{obj.goods_total_price:.2f}"
+        return f"¥{obj.goods_total_price:.2f}" if obj.goods_total_price else "¥0.00"
     goods_total_price_display.short_description = '总价'
     
     def create_short_time(self, obj):
-        return obj.create_time.strftime('%m-%d %H:%M')
+        return obj.create_time.strftime('%Y-%m-%d %H:%M') if obj.create_time else ""
     create_short_time.short_description = '创建时间'
+
+    # 可选：隐藏 OrderItem 的独立入口，避免混淆
+    def get_model_perms(self, request):
+        """在Admin首页隐藏OrderItem模型"""
+        return {}

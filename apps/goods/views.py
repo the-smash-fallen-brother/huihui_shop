@@ -55,6 +55,7 @@ class GoodsHotView(generics.ListAPIView):
     queryset = Goods.objects.filter(goods_status=1).order_by('-goods_sales')[:10]
     serializer_class = GoodsSerializer
     permission_classes = [AllowAny]
+    authentication_classes = []  # 禁用认证
 
 
 class GoodsNewView(generics.ListAPIView):
@@ -65,6 +66,7 @@ class GoodsNewView(generics.ListAPIView):
     queryset = Goods.objects.filter(goods_status=1).order_by('-create_time')[:10]
     serializer_class = GoodsSerializer
     permission_classes = [AllowAny]
+    authentication_classes = []  # 禁用认证
 
 
 class GoodsSpecView(generics.ListAPIView):

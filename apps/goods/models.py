@@ -125,3 +125,5 @@ class GoodsParam(models.Model):
             'param_name': self.param_name,
             'param_value': self.param_value
         }.__str__()
+
+

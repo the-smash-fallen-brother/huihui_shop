@@ -1,6 +1,17 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import GoodsCategory, Goods, GoodsSpec, GoodsParam
+# 定义内连类
+class GoodsSpecInline:
+    """商品类型内联编辑"""
+    model=GoodsSpec
+    pass
+class GoodsParamInline:
+    """商品参数内联编辑"""
+    model=GoodsParam
+    pass
+
+
 
 class GoodsCategoryInline(admin.TabularInline):
     """二级分类内联编辑"""
@@ -10,6 +21,12 @@ class GoodsCategoryInline(admin.TabularInline):
     fields = ('category_name', 'category_level', 'category_icon', 'sort_order', 'status')
     ordering = ('sort_order',)
 
+class GoodsParamInline(admin.TabularInline):
+    """商品参数内联编辑"""
+    model = GoodsParam
+    extra = 1
+    fields = ('param_name', 'param_value')
+# 定义左侧菜单模型
 @admin.register(GoodsCategory)
 class GoodsCategoryAdmin(admin.ModelAdmin):
     """商品分类Admin配置"""
@@ -50,21 +67,11 @@ class GoodsCategoryAdmin(admin.ModelAdmin):
         queryset.update(status=False)
     disable_categories.short_description = "禁用所选分类"
 
-class GoodsSpecInline(admin.TabularInline):
-    """商品规格内联编辑"""
-    model = GoodsSpec
-    extra = 1
-    fields = ('spec_name', 'spec_value')
 
-class GoodsParamInline(admin.TabularInline):
-    """商品参数内联编辑"""
-    model = GoodsParam
-    extra = 1
-    fields = ('param_name', 'param_value')
 
 @admin.register(Goods)
 class GoodsAdmin(admin.ModelAdmin):
-    list_display = ('goods_name', 'category', 'goods_price', 'goods_stock', 
+    list_display = ('goods_id','goods_name', 'category', 'goods_price', 'goods_stock', 
                    'goods_sales', 'status_display', 'cover_preview', 'create_time')
     list_editable = ('goods_price', 'goods_stock')  # 现在这些字段都在 list_display 中
     
@@ -95,18 +102,7 @@ class GoodsAdmin(admin.ModelAdmin):
         queryset.update(goods_status=0)
     disable_goods.short_description = "下架所选商品"
 
-@admin.register(GoodsSpec)
-class GoodsSpecAdmin(admin.ModelAdmin):
-    """商品规格Admin配置"""
-    list_display = ('spec_name', 'spec_value', 'goods_link', 'create_time')
-    list_filter = ('create_time',)
-    search_fields = ('spec_name', 'spec_value', 'goods__goods_name')
-    raw_id_fields = ('goods',)
-    
-    def goods_link(self, obj):
-        return format_html('<a href="/admin/goods/goods/{}/change/">{}</a>', 
-                         obj.goods.id, obj.goods.goods_name)
-    goods_link.short_description = '所属商品'
+
 
 @admin.register(GoodsParam)
 class GoodsParamAdmin(admin.ModelAdmin):
@@ -118,5 +114,8 @@ class GoodsParamAdmin(admin.ModelAdmin):
     
     def goods_link(self, obj):
         return format_html('<a href="/admin/goods/goods/{}/change/">{}</a>', 
-                         obj.goods.id, obj.goods.goods_name)
+                         obj.goods.goods_id, obj.goods.goods_name)
     goods_link.short_description = '所属商品'
+  
+
+

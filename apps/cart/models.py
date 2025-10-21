@@ -22,10 +22,14 @@ class ShoppingCart(models.Model):
         unique_together = ('user', 'goods')  # 用户和商品的唯一组合
 
     def __str__(self):
-        return {
-            'cart_id': self.cart_id,
-            'user_id': self.user_id,
-            'goods_id': self.goods_id,
-            'goods_num': self.goods_num,
-            'selected': self.selected
-        }.__str__()
+        return f"购物车项: 用户{self.user.username} - 商品{self.goods.goods_name} x {self.goods_num}"
+
+    def clean(self):
+        # 模型验证
+        from django.core.exceptions import ValidationError
+        if not self.user_id:
+            raise ValidationError("用户信息不能为空")
+        if not self.goods_id:
+            raise ValidationError("商品信息不能为空")
+        if self.goods_num <= 0:
+            raise ValidationError("商品数量必须大于0")

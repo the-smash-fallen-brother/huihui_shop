@@ -20,7 +20,7 @@ class User(AbstractUser):
         default=Gender.UNKNOWN,
         verbose_name=_('性别')
     )
-    avatar_url = models.URLField(max_length=255, blank=True, null=True, verbose_name=_('头像URL'))
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name=_('头像'))
     birthday = models.DateField(blank=True, null=True, verbose_name=_('生日'))
     status = models.SmallIntegerField(default=1, verbose_name=_('状态(0-禁用 1-正常)'))
     last_login_time = models.DateTimeField(blank=True, null=True, verbose_name=_('最后登录时间'))

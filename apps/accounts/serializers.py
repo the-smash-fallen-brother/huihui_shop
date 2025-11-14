@@ -4,11 +4,13 @@ from apps.goods.models import Goods
 from apps.goods.serializers import GoodsSimpleSerializer
 
 class UserSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
         fields = [
             'user_id', 'username', 'mobile', 'email',
-            'gender', 'avatar_url', 'status', 'password'
+            'gender', 'birthday', 'avatar', 'avatar_url', 'status', 'password'
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
@@ -16,6 +18,15 @@ class UserSerializer(serializers.ModelSerializer):
             'mobile': {'required': True},
             'username': {'required': True}
         }
+    
+    def get_avatar_url(self, obj):
+        """获取头像的完整URL"""
+        if obj.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
+        return None
 
     def create(self, validated_data):
         """创建用户并设置密码"""
@@ -47,7 +58,7 @@ class UserAddressSerializer(serializers.ModelSerializer):
         user = self.context.get('user')
         if user and data.get('is_default', False):
             # 排除当前正在修改的地址（如果是更新操作）
-            exclude_id = self.instance.id if self.instance else None
+            exclude_id = self.instance.address_id if self.instance else None
             if user.addresses.filter(is_default=True).exclude(pk=exclude_id).exists():
                 raise serializers.ValidationError("已存在默认地址")
         

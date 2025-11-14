@@ -18,6 +18,7 @@ urlpatterns = [
     # 地址管理
     path('addresses/', UserAddressView.as_view(), name='address-list'),
     path('addresses/<int:address_id>/', UserAddressDetailView.as_view(), name='address-detail'),
+    path('addresses/<int:address_id>/set_default/', UserAddressDetailView.as_view(), name='address-set-default'),
     path('addresses/default/', UserAddressView.as_view(), name='address-default'),
     
     # 收藏管理

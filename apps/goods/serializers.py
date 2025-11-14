@@ -8,10 +8,14 @@ class GoodsCategorySerializer(serializers.ModelSerializer):
                  'category_icon', 'sort_order', 'status']
 
 class GoodsSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source='category.category_name', read_only=True)
+    create_time = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', read_only=True)
+    
     class Meta:
         model = Goods
         fields = ['goods_id', 'goods_name', 'goods_price', 'market_price',
-                 'goods_cover_img', 'goods_sales', 'goods_status']
+                 'goods_cover_img', 'goods_sales', 'goods_status', 
+                 'category_name', 'create_time']
 
 class GoodsDetailSerializer(serializers.ModelSerializer):
     category = GoodsCategorySerializer()

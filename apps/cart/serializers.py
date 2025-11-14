@@ -8,11 +8,12 @@ logger = logging.getLogger(__name__)
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
     goods_info = serializers.SerializerMethodField()
+    goods = serializers.PrimaryKeyRelatedField(queryset=Goods.objects.all())
 
     class Meta:
         model = ShoppingCart
         fields = ['cart_id', 'user', 'goods', 'goods_num', 'selected', 'goods_info', 'create_time', 'update_time']
-        read_only_fields = ['user', 'cart_id', 'goods', 'create_time', 'update_time']
+        read_only_fields = ['user', 'cart_id', 'create_time', 'update_time']
 
     def get_goods_info(self, obj):
         goods = obj.goods
@@ -76,6 +77,90 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("商品数量必须大于0")
         
         return attrs
+
+    # def validate(self, attrs):
+    #     # 整体验证
+    #     request = self.context.get('request')
+    #     if not request or not hasattr(request, 'user'):
+    #         raise serializers.ValidationError("无法获取用户信息")
+        
+    #     # 设置用户为当前认证用户
+    #     attrs['user'] = request.user
+        
+    #     # 在创建时检查商品信息
+    #     if not self.instance:  # 创建新实例时
+    #         goods_id = attrs.get('goods')
+    #     if not goods_id:
+    #         raise serializers.ValidationError("商品信息不能为空")
+        
+    #     # 获取商品对象进行验证
+    #     try:
+    #         goods_obj = Goods.objects.get(id=goods_id)
+    #     except Goods.DoesNotExist:
+    #         raise serializers.ValidationError("商品不存在")
+        
+    #     # 使用商品对象进行库存验证
+    #     if goods_obj.goods_stock <= 0:
+    #         raise serializers.ValidationError("商品库存不足")
+            
+    #     goods_num = attrs.get('goods_num', 1)
+    #     if goods_num > goods_obj.goods_stock:
+    #         raise serializers.ValidationError("商品数量不能超过库存")
+            
+    #     else:  # 更新现有实例时
+    #     # 更新时 goods 已经是对象了
+    #         goods_obj = self.instance.goods
+    #         goods_num = attrs.get('goods_num', self.instance.goods_num)
+        
+    #     # 检查商品是否上架
+    #     if hasattr(goods_obj, 'goods_status') and goods_obj.goods_status != 1:
+    #         raise serializers.ValidationError("商品已下架，无法更新数量")
+        
+    #     # 检查库存是否充足
+    #     if goods_num > goods_obj.goods_stock:
+    #         raise serializers.ValidationError(f"商品数量({goods_num})不能超过库存({goods_obj.goods_stock})")
+    #     if goods_obj.goods_stock <= 0:
+    #         raise serializers.ValidationError("商品库存不足")
+    #     if goods_num <= 0:
+    #         raise serializers.ValidationError("商品数量必须大于0")
+    
+    #     return attrs
+    # def validate(self, attrs):
+    #     request = self.context.get('request')
+    #     if not request or not request.user.is_authenticated:
+    #         raise serializers.ValidationError({'user': '用户未认证或登录失效'})
+
+    #         attrs['user'] = request.user
+
+    #     if not self.instance:  # 创建
+    #         goods = attrs.get('goods')
+    #         if not goods:
+    #             raise serializers.ValidationError({'goods': '商品信息不能为空'})
+
+    #         if goods.goods_stock <= 0:
+    #             raise serializers.ValidationError({'goods': '该商品暂无库存'})
+        
+    #         goods_num = attrs.get('goods_num', 1)
+    #         if goods_num > goods.goods_stock:
+    #             raise serializers.ValidationError({
+    #             'goods_num': f'购买数量不能超过库存 {goods.goods_stock}'
+    #         })
+
+    #     else:  # 更新
+    #         old_goods = self.instance.goods
+    #         new_goods_num = attrs.get('goods_num', self.instance.goods_num)
+
+    #         if hasattr(old_goods, 'goods_status') and old_goods.goods_status != 1:
+    #             raise serializers.ValidationError({'goods': '商品已下架，无法修改'})
+
+    #         if new_goods_num > old_goods.goods_stock:
+    #             raise serializers.ValidationError({
+    #             'goods_num': f'数量超出库存限制（当前库存：{old_goods.goods_stock}）'
+    #         })
+    #         if new_goods_num <= 0:
+    #             raise serializers.ValidationError({'goods_num': '数量必须大于0'})
+
+    #     return attrs
 
 class ShoppingCartDetailSerializer(serializers.ModelSerializer):
     class Meta:

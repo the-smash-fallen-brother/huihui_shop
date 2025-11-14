@@ -1,6 +1,7 @@
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.tokens import RefreshToken
 from apps.accounts.models import User, UserAddress, UserFavorite
 from apps.goods.models import Goods
@@ -78,16 +79,18 @@ class LogoutView(APIView):
 class UserInfoView(APIView):
     """用户信息"""
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
+        serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data)
 
     def put(self, request):
         serializer = UserSerializer(
             request.user, 
             data=request.data, 
-            partial=True
+            partial=True,
+            context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -186,6 +189,25 @@ class UserAddressDetailView(APIView):
         serializer.save()
         return Response(serializer.data)
 
+    def post(self, request, address_id):
+        """设置默认地址"""
+        address = self.get_address(address_id)
+        if not address:
+            return Response(
+                {'error': '地址不存在'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # 将用户所有地址设为非默认
+        request.user.addresses.filter(is_default=True).update(is_default=False)
+        
+        # 将当前地址设为默认
+        address.is_default = True
+        address.save()
+        
+        serializer = UserAddressSerializer(address)
+        return Response(serializer.data)
+
     def delete(self, request, address_id):
         """删除地址"""
         address = self.get_address(address_id)
@@ -207,27 +229,8 @@ class UserFavoriteView(APIView):
         serializer = UserFavoriteSerializer(favorites, many=True)
         return Response(serializer.data)
 
-    def post(self, request, goods_id=None):
-        """
-        添加/删除收藏
-        POST /favorites/ - 添加收藏 (需提供goods_id参数)
-        DELETE /favorites/{goods_id}/ - 删除收藏
-        """
-        if goods_id:  # 删除收藏
-            try:
-                favorite = UserFavorite.objects.get(
-                    user=request.user,
-                    goods_id=goods_id
-                )
-                favorite.delete()
-                return Response({'message': '收藏删除成功'})
-            except UserFavorite.DoesNotExist:
-                return Response(
-                    {'error': '收藏不存在'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        
-        # 添加收藏
+    def post(self, request):
+        """添加收藏"""
         goods_id = request.data.get('goods_id')
         if not goods_id:
             return Response(
@@ -256,6 +259,21 @@ class UserFavoriteView(APIView):
             
         serializer = UserFavoriteSerializer(favorite)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, goods_id):
+        """删除收藏"""
+        try:
+            favorite = UserFavorite.objects.get(
+                user=request.user,
+                goods_id=goods_id
+            )
+            favorite.delete()
+            return Response({'message': '收藏删除成功'})
+        except UserFavorite.DoesNotExist:
+            return Response(
+                {'error': '收藏不存在'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 class UserFavoriteCheckView(APIView):
     """检查收藏状态"""

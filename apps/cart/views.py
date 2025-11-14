@@ -60,6 +60,7 @@ class ShoppingCartView(generics.ListCreateAPIView):
             cart_item.goods_num += goods_num
             cart_item.save()
             serializer = ShoppingCartSerializer(cart_item)
+            
             return Response(serializer.data)
         
         # 创建新的购物车项
@@ -79,12 +80,18 @@ class ShoppingCartDetailView(generics.RetrieveUpdateDestroyAPIView):
     DELETE /cart/{cart_id}/ - 删除购物车项
     """
     permission_classes = [IsAuthenticated]
-    serializer_class = ShoppingCartSerializer
+    serializer_class = ShoppingCartDetailSerializer
     lookup_field = 'cart_id'
 
     def get_queryset(self):
         # 确保用户只能访问自己的购物车项
         return ShoppingCart.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        # 根据操作类型选择不同的序列化器
+        if self.request.method in ['PUT', 'PATCH']:
+            return ShoppingCartDetailSerializer
+        return ShoppingCartSerializer
 
     def perform_update(self, serializer):
         # 更新时确保用户信息不变

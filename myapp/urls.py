@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 # import admin_tools.urls
 
 urlpatterns = [
@@ -16,3 +18,7 @@ urlpatterns = [
     path('reviews/', include('apps.reviews.urls')),
     path('menus/', include('apps.menu.urls')),
 ]
+
+# 开发环境下提供媒体文件访问
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

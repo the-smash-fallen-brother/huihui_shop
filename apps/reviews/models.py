@@ -49,7 +49,7 @@ class CommentImage(models.Model):
     """
     image_id = models.AutoField(primary_key=True, verbose_name='图片ID')
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='images', verbose_name='评论')
-    image_url = models.URLField(max_length=255, verbose_name='图片URL')
+    image_url = models.ImageField(upload_to='comment_images/', verbose_name='图片')
     sort_order = models.IntegerField(default=0, verbose_name='排序值')
     create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
 

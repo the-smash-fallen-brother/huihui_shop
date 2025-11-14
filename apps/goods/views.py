@@ -2,6 +2,7 @@ from rest_framework import generics, filters
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db import models
 from apps.goods.models import GoodsCategory, Goods, GoodsSpec, GoodsParam
 from apps.goods.serializers import (
     GoodsCategorySerializer, 
@@ -149,5 +150,61 @@ class GoodsSearchView(generics.ListAPIView):
             'count': queryset.count(),
             'results': serializer.data
         })
+
+
+class GoodsRecommendView(generics.ListAPIView):
+    """
+    推荐商品接口
+    GET /goods/recommend/
+    
+    参数：
+    - type: 推荐类型（rating-按评分推荐，comments-按评论数推荐，sales-按销量推荐，默认rating）
+    - limit: 返回数量限制（默认10个）
+    
+    示例：
+    /goods/recommend/                    # 默认按评分推荐
+    /goods/recommend/?type=rating      # 按评分推荐
+    /goods/recommend/?type=comments    # 按评论数推荐
+    /goods/recommend/?type=sales       # 按销量推荐
+    /goods/recommend/?type=rating&limit=5  # 推荐5个高评分商品
+    """
+    serializer_class = GoodsSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []  # 禁用认证
+
+    def get_queryset(self):
+        # 获取参数
+        recommend_type = self.request.query_params.get('type', 'rating')
+        limit = int(self.request.query_params.get('limit', 10))
+        
+        # 基础查询：只查询上架商品
+        queryset = Goods.objects.filter(goods_status=1)
+        
+        if recommend_type == 'comments':
+            # 按评论数推荐
+            queryset = queryset.annotate(
+                comment_count=models.Count('comments')
+            ).filter(comment_count__gt=0).order_by('-comment_count')
+            
+            # 如果没有评论，返回空结果
+            if not queryset.exists():
+                return Goods.objects.none()
+                
+        elif recommend_type == 'sales':
+            # 按销量推荐
+            queryset = queryset.order_by('-goods_sales')
+            
+        else:
+            # 按评分推荐（默认）
+            queryset = queryset.annotate(
+                avg_rating=models.Avg('comments__rating'),
+                comment_count=models.Count('comments')
+            ).filter(comment_count__gt=0).order_by('-avg_rating', '-comment_count')
+            
+            # 如果没有评论，改为按销量推荐
+            if not queryset.exists():
+                queryset = Goods.objects.filter(goods_status=1).order_by('-goods_sales')
+        
+        return queryset[:limit]
 
 

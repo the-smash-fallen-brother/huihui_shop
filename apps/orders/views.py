@@ -2,7 +2,9 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
-from django.utils import timezone  
+from django.utils import timezone
+import time
+import uuid
 from apps.orders.models import Order, OrderItem
 from apps.orders.serializers import OrderSerializer, OrderDetailSerializer
 from apps.cart.models import ShoppingCart
@@ -27,11 +29,16 @@ class OrderView(generics.ListCreateAPIView):
         cart_item_ids = request.data.get('cart_item_ids', [])
         remark = request.data.get('remark', '')
 
+        # 添加调试日志
+        print(f"请求数据: address_id={address_id}, cart_item_ids={cart_item_ids}, remark={remark}")
+
         # 验证地址
         try:
             address = user.addresses.get(address_id=address_id)
-        except:
-            return Response({'error': '地址不存在'}, status=status.HTTP_400_BAD_REQUEST)
+            print(f"找到地址: {address}")
+        except Exception as e:
+            print(f"地址验证失败: {e}")
+            return Response({'error': '地址不存在', 'details': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         # 获取选中的购物车商品
         cart_items = ShoppingCart.objects.filter(
@@ -40,12 +47,22 @@ class OrderView(generics.ListCreateAPIView):
             selected=True
         ).select_related('goods')
 
+        print(f"找到购物车商品数量: {cart_items.count()}")
+        
         if not cart_items:
-            return Response({'error': '没有选中的商品'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': '没有选中的商品', 'cart_item_ids': cart_item_ids}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 生成唯一订单编号
+        def generate_order_no():
+            # 使用时间戳 + 随机数生成唯一订单号
+            timestamp = str(int(time.time()))
+            random_str = str(uuid.uuid4()).replace('-', '')[:8].upper()
+            return f"ORDER{timestamp}{random_str}"
 
         # 创建订单
         order = Order.objects.create(
             user=user,
+            order_no=generate_order_no(),
             total_amount=0,
             payment_amount=0,
             shipping_fee=0,

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import models
+from django.utils import timezone
 from apps.goods.models import GoodsCategory, Goods, GoodsSpec, GoodsParam
 from apps.goods.serializers import (
     GoodsCategorySerializer, 
@@ -206,5 +207,77 @@ class GoodsRecommendView(generics.ListAPIView):
                 queryset = Goods.objects.filter(goods_status=1).order_by('-goods_sales')
         
         return queryset[:limit]
+
+
+class FlashSaleGoodsListView(generics.ListAPIView):
+    """
+    秒杀商品列表接口
+    GET /goods/flash-sale/
+    
+    返回当前正在进行的秒杀商品
+    """
+    serializer_class = GoodsSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []  # 禁用认证
+
+    def get_queryset(self):
+        current_time = timezone.now()
+        # 查询正在进行中的秒杀商品
+        queryset = Goods.objects.filter(
+            is_flash_sale=True,
+            goods_status=1,
+            flash_sale_start_time__lte=current_time,
+            flash_sale_end_time__gte=current_time,
+            flash_sale_stock__gt=0
+        ).order_by('flash_sale_end_time')  # 按结束时间升序，即将结束的排在前面
+        return queryset
+
+
+class FlashSaleGoodsDetailView(generics.RetrieveAPIView):
+    """
+    秒杀商品详情接口
+    GET /goods/flash-sale/{goods_id}/
+    
+    返回指定秒杀商品的详细信息
+    """
+    serializer_class = GoodsDetailSerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'goods_id'
+
+    def get_queryset(self):
+        current_time = timezone.now()
+        # 查询正在进行中的秒杀商品
+        queryset = Goods.objects.filter(
+            goods_id=self.kwargs['goods_id'],
+            is_flash_sale=True,
+            goods_status=1,
+            flash_sale_start_time__lte=current_time,
+            flash_sale_end_time__gte=current_time
+        )
+        return queryset
+
+
+class UpcomingFlashSaleView(generics.ListAPIView):
+    """
+    即将开始的秒杀商品接口
+    GET /goods/upcoming-flash-sale/
+    
+    返回即将开始的秒杀商品（未来24小时内）
+    """
+    serializer_class = GoodsSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []  # 禁用认证
+
+    def get_queryset(self):
+        current_time = timezone.now()
+        # 查询未来24小时内即将开始的秒杀商品
+        queryset = Goods.objects.filter(
+            is_flash_sale=True,
+            goods_status=1,
+            flash_sale_start_time__gt=current_time,
+            flash_sale_start_time__lte=current_time + timezone.timedelta(hours=24),
+            flash_sale_stock__gt=0
+        ).order_by('flash_sale_start_time')  # 按开始时间升序，即将开始的排在前面
+        return queryset
 
 

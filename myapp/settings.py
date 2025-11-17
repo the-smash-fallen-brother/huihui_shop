@@ -67,7 +67,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ),
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -84,16 +84,12 @@ SIMPLE_JWT = {
     'USER_ID_CLAIM': 'user_id',
     'TOKEN_USER_CLASS': 'accounts.models.User',
     # Token 有效期
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # 延长到1天，避免频繁过期
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     
     # 安全设置
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
-    
-    # 解决权限冲突的关键配置
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
 }
 
 #允许跨域

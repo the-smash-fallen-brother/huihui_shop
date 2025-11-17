@@ -9,7 +9,10 @@ from .views import (
     GoodsSearchView,
     GoodsRecommendView,
     GoodsSpecView,
-    GoodsParamView
+    GoodsParamView,
+    FlashSaleGoodsListView,
+    FlashSaleGoodsDetailView,
+    UpcomingFlashSaleView
 )
 
 urlpatterns = [
@@ -22,4 +25,9 @@ urlpatterns = [
     path('search/', GoodsSearchView.as_view(), name='goods-search'),
     path('<int:goods_id>/specs/', GoodsSpecView.as_view(), name='goods-specs'),
     path('<int:goods_id>/params/', GoodsParamView.as_view(), name='goods-params'),
+    
+    # 秒杀相关接口
+    path('flash-sale/', FlashSaleGoodsListView.as_view(), name='flash-sale-goods-list'),
+    path('flash-sale/<int:goods_id>/', FlashSaleGoodsDetailView.as_view(), name='flash-sale-goods-detail'),
+    path('upcoming-flash-sale/', UpcomingFlashSaleView.as_view(), name='upcoming-flash-sale'),
 ]

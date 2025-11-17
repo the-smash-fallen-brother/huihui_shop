@@ -37,6 +37,7 @@ class RegisterView(APIView):
 class LoginView(APIView):
     """用户登录"""
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         username = request.data.get('username')

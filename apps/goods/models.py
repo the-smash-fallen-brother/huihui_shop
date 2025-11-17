@@ -57,6 +57,14 @@ class Goods(models.Model):
     goods_stock = models.IntegerField(default=0, verbose_name='商品库存')
     goods_sales = models.IntegerField(default=0, verbose_name='商品销量')
     goods_status = models.SmallIntegerField(choices=GOODS_STATUS_CHOICES, default=1, verbose_name='商品状态')
+    
+    # 秒杀相关字段
+    is_flash_sale = models.BooleanField(default=False, verbose_name='是否秒杀商品')
+    flash_sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='秒杀价格')
+    flash_sale_stock = models.IntegerField(default=0, verbose_name='秒杀库存')
+    flash_sale_start_time = models.DateTimeField(null=True, blank=True, verbose_name='秒杀开始时间')
+    flash_sale_end_time = models.DateTimeField(null=True, blank=True, verbose_name='秒杀结束时间')
+    
     create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     update_time = models.DateTimeField(auto_now=True, verbose_name='更新时间')
 

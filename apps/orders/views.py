@@ -81,13 +81,23 @@ class OrderView(generics.ListCreateAPIView):
                 transaction.set_rollback(True)
                 return Response({'error': f'{goods.goods_name}库存不足'}, status=status.HTTP_400_BAD_REQUEST)
 
-            item_total = goods.goods_price * cart_item.goods_num
+            # 判断是否为秒杀商品，使用对应价格
+            if goods.is_flash_sale and goods.flash_sale_price:
+                current_time = timezone.now()
+                if goods.flash_sale_start_time <= current_time <= goods.flash_sale_end_time:
+                    item_price = goods.flash_sale_price  # 使用秒杀价格
+                else:
+                    item_price = goods.goods_price  # 秒杀已结束，使用原价
+            else:
+                item_price = goods.goods_price  # 普通商品价格
+            
+            item_total = item_price * cart_item.goods_num
             OrderItem.objects.create(
                 order=order,
                 goods=goods,
                 goods_name=goods.goods_name,
                 goods_cover_img=goods.goods_cover_img,
-                goods_price=goods.goods_price,
+                goods_price=item_price,
                 goods_num=cart_item.goods_num,
                 goods_total_price=item_total
             )

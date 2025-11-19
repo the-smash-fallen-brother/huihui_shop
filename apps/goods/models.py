@@ -53,7 +53,9 @@ class Goods(models.Model):
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='成本价格')
     goods_desc = models.TextField(verbose_name='商品描述')
     goods_cover_img = models.URLField(max_length=255, verbose_name='商品封面图')
+    goods_cover_img_file = models.ImageField(upload_to='goods_img/cover/', null=True, blank=True, verbose_name='商品封面图文件')
     goods_carousel = models.JSONField(default=list, verbose_name='商品轮播图(JSON数组)')
+    goods_carousel_files = models.JSONField(default=list, null=True, blank=True, verbose_name='商品轮播图文件列表')
     goods_stock = models.IntegerField(default=0, verbose_name='商品库存')
     goods_sales = models.IntegerField(default=0, verbose_name='商品销量')
     goods_status = models.SmallIntegerField(choices=GOODS_STATUS_CHOICES, default=1, verbose_name='商品状态')
@@ -133,5 +135,28 @@ class GoodsParam(models.Model):
             'param_name': self.param_name,
             'param_value': self.param_value
         }.__str__()
+
+
+class GoodsCarousel(models.Model):
+    """
+    商品轮播图表
+    """
+    carousel_id = models.AutoField(primary_key=True, verbose_name='轮播图ID')
+    goods = models.ForeignKey(Goods, on_delete=models.CASCADE, related_name='carousel_images', verbose_name='商品')
+    image = models.ImageField(upload_to='goods_img/carousel/', verbose_name='轮播图片')
+    alt_text = models.CharField(max_length=200, blank=True, null=True, verbose_name='图片描述')
+    sort_order = models.IntegerField(default=0, verbose_name='排序值')
+    is_active = models.BooleanField(default=True, verbose_name='是否启用')
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        app_label = 'goods'
+        db_table = 'goods_carousel'
+        verbose_name = '商品轮播图'
+        verbose_name_plural = verbose_name
+        ordering = ['sort_order', 'create_time']
+
+    def __str__(self):
+        return f"{self.goods.goods_name} - 轮播图{self.carousel_id}"
 
 

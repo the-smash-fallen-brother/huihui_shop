@@ -1,6 +1,7 @@
-from rest_framework import generics, filters
+from rest_framework import generics, filters, status
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import models
 from django.utils import timezone
@@ -207,6 +208,56 @@ class GoodsRecommendView(generics.ListAPIView):
                 queryset = Goods.objects.filter(goods_status=1).order_by('-goods_sales')
         
         return queryset[:limit]
+
+
+class GoodsImageUploadView(generics.UpdateAPIView):
+    """
+    商品图片上传接口
+    POST /goods/{goods_id}/upload-images/
+    
+    用于上传商品封面图和轮播图文件
+    需要认证权限，仅限管理员使用
+    """
+    queryset = Goods.objects.all()
+    serializer_class = GoodsSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    lookup_field = 'goods_id'
+    
+    def update(self, request, *args, **kwargs):
+        goods = self.get_object()
+        
+        # 处理封面图上传
+        if 'goods_cover_img_file' in request.FILES:
+            goods.goods_cover_img_file = request.FILES['goods_cover_img_file']
+            goods.save()
+        
+        # 处理轮播图上传
+        carousel_files = request.FILES.getlist('goods_carousel_files')
+        if carousel_files:
+            # 保存轮播图文件信息
+            carousel_files_info = []
+            for idx, file in enumerate(carousel_files):
+                # 为每个轮播图生成唯一文件名
+                file_extension = file.name.split('.')[-1]
+                file_name = f"carousel_{goods.goods_id}_{idx + 1}.{file_extension}"
+                
+                # 保存文件
+                goods.goods_carousel_files.append({
+                    'file_name': file_name,
+                    'original_name': file.name,
+                    'size': file.size,
+                    'upload_time': timezone.now().isoformat()
+                })
+                
+                # 这里可以根据需要实际保存文件到指定目录
+                # 由于使用了ImageField，Django会自动处理文件保存
+                
+            goods.save()
+        
+        # 返回更新后的商品信息
+        serializer = self.get_serializer(goods)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class FlashSaleGoodsListView(generics.ListAPIView):

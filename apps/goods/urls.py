@@ -10,6 +10,7 @@ from .views import (
     GoodsRecommendView,
     GoodsSpecView,
     GoodsParamView,
+    GoodsImageUploadView,
     FlashSaleGoodsListView,
     FlashSaleGoodsDetailView,
     UpcomingFlashSaleView
@@ -25,6 +26,7 @@ urlpatterns = [
     path('search/', GoodsSearchView.as_view(), name='goods-search'),
     path('<int:goods_id>/specs/', GoodsSpecView.as_view(), name='goods-specs'),
     path('<int:goods_id>/params/', GoodsParamView.as_view(), name='goods-params'),
+    path('<int:goods_id>/upload-images/', GoodsImageUploadView.as_view(), name='goods-image-upload'),
     
     # 秒杀相关接口
     path('flash-sale/', FlashSaleGoodsListView.as_view(), name='flash-sale-goods-list'),
